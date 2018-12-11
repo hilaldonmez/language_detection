@@ -1,146 +1,71 @@
-# -*- coding: utf-8 -*-
 import re
-from collections import defaultdict
+from collections import defaultdict, Counter
 import numpy as np
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 
 # languages = ['bg', 'bs', 'cz', 'es-AR', 'es-ES', 'hr', 'id', 'mk', 'my', 'pt-BR', 'pt-PT', 'sk', 'sr']
 input_file = 'Project (Application 2) (Corpus).txt'
+remove_list = [" ","." ,"," ,"[" ,"]","(" ,')','"',"”","„","“",'%','!',';','?','–','-','&',"'",'/','…','→','’','‘',"`",'@','$','»','«','€','•','½','+','#','*','‰','®','<','>','=','©','°','²' ]	
 
-def read_file(input_file):
-	with open(input_file, encoding='utf-16') as f:
-		lines = f.read().split("\n")
-		sentences_by_language = {}
-		for index, line in enumerate(lines):
-			sentence = line.split("\t")
-			if len(sentence) < 2:
-				continue
-			lang = sentence[1]
-			if lang in sentences_by_language:
-				sentences_by_language[lang].append(sentence[0])
-			else:
-				sentences_by_language[lang] = [sentence[0]]
-		return sentences_by_language
-
-def get_sentence_id(sentences):
-    lang_id = dict()
-    count = 0
-    for i in sentences.keys():
-        lang_id[i] = count 
-        count = count + 1
-    return lang_id
-
-# remove later
-def preprocessing(sentences,languages):
-    remove_list = [" ","." ,"," ,"[" ,"]","(" ,')','"',"”","„","“",'%','!',';','?','–','-','&',"'",'/','…','→','’','‘',"`",'@','$','»','«','€','•','½','+','#','*','‰','®','<','>','=','©','°','²' ]	
+def read_file(input_file,remove_list):
+    with open(input_file, encoding='utf-16') as f:
+        lines = f.read().split("\n")
+        sentences_by_language = {}              
+        for index, line in enumerate(lines):
+            sentence = line.split("\t")
+            if len(sentence) < 2:
+                continue
+            lang = sentence[1]
+            sent = sentence[0]
+            for i in remove_list: 
+                sent = sent.replace(i, "")              
+            if lang in sentences_by_language:
+                sentences_by_language[lang].append(sent)              
+            else:
+                sentences_by_language[lang] = [sent]                
+        return sentences_by_language    
     
-    pre_sentences = dict()
-    for l in sentences:
-        l_id = languages[l]
-        pre_sentences[l_id] = []
-        for sent in sentences[l]:
-            temp_sent = sent
-            for i in remove_list:               
-                temp_sent = temp_sent.replace(i, "")
-            pre_sentences[l_id].append(temp_sent)
-
-    return pre_sentences
-
-
-#%%
-def get_frequencies(sentences,languages):
-    remove_list = [" ","." ,"," ,"[" ,"]","(" ,')','"',"”","„","“",'%','!',';','?','–','-','&',"'",'/','…','→','’','‘',"`",'@','$','»','«','€','•','½','+','#','*','‰','®','<','>','=','©','°','²' ]	
+def train_preprocessing(sentences):
+    total_sentences = []
+    for lang in sentences:
+        temp_sent = ""
+        for sent in lang:
+            temp_sent = temp_sent + sent 
+        total_sentences.append(temp_sent)        
+    return total_sentences
             
-    pre_sentences = dict()
-    letter_dict = defaultdict()
-    total_char = []  # total num of letter for each language  
-    lang_letter = [] # each letter frequency for each language  
-    count  = 0
-    for l in sentences:
-        lang_letter_freq = dict() # the num letter for a language
-        letter_count = 0
-        l_id = languages[l]
-        pre_sentences[l_id] = []
-        for sent in sentences[l]:
-            sentence_letter_freq = dict() #letter freq in the sentence
-            temp_sent = sent
-            for i in remove_list:               
-                temp_sent = temp_sent.replace(i, "")
-            for letter in temp_sent:
-                letter_count = letter_count + 1 
-                if letter not in letter_dict:
-                    letter_dict[letter] = count
-                    count = count + 1
-                letter_id = letter_dict[letter]
-               
-                if letter_id in lang_letter_freq:
-                    lang_letter_freq[letter_id] = lang_letter_freq[letter_id] + 1
-                else:
-                    lang_letter_freq[letter_id] = 1
-                
-                if letter_id in sentence_letter_freq:
-                    sentence_letter_freq[letter_id] = sentence_letter_freq[letter_id] + 1
-                else:
-                    sentence_letter_freq[letter_id] = 1
-                         
-            pre_sentences[l_id].append(sentence_letter_freq)
-            
-        total_char.append(letter_count)
-        lang_letter.append(lang_letter_freq)
-    
-    return pre_sentences, total_char, lang_letter, letter_dict
+def get_train_test(sentences):
+    sentences_train = []
+    sentences_test = []
+    for lang in sentences:
+        train, test = train_test_split(sentences[lang], test_size=0.1, random_state=42)   
+        sentences_train.append(train)
+        sentences_test.append(test)
+    return sentences_train, sentences_test
 
+def get_letter_dict(train_sentences):
+    temp = ''.join(train_sentences)
+    return list(set(temp))
 
-# P(c_i | l)
-def get_conditional_prob(letter_dict, languages , lang_letter_count, total_char) :
-    
-    letter_len = len(letter_dict)
-    lang_len = len(languages)
-    letter_lang_prob = np.zeros((letter_len, lang_len ))
-    for letter in letter_dict:
-        letter_id = letter_dict[letter]
-        for lang in languages:
-            lang_id = languages[lang]
-            freq = 0
-            
-            if letter_id in lang_letter_count[lang_id]:
-                freq = lang_letter_count[lang_id][letter_id]
-            
-            lang_count = total_char[lang_id]
-            letter_lang_prob[letter_id][lang_id] = freq / lang_count
-    
-    return letter_lang_prob
+def get_conditional_prob(train_sentences, letter_dict , apply_smoothing = False):
+    len_letter = len(letter_dict)
+    conditional_prob = np.zeros((len_letter, len_languages))
+    for lang in range(len(train_sentences)):
+        counter = Counter(train_sentences[lang])
+        for char in range(len(letter_dict)):
+            real_char = letter_dict[char] 
+            conditional_prob[char][lang] = counter[real_char]
+        conditional_prob[:,lang] = conditional_prob[:,lang] / lang_total_char[lang] 
+    return conditional_prob
 
-#  sentence containing letter id
-def naive_bayes(letter_lang_prob, language_prob,sentence):
-    sentence_prob = 1 
-    lang_id = 0
-    for letter_id in sentence:
-        sentence_prob = sentence_prob * letter_lang_prob[letter_id][lang_id] * language_prob  
-    
-    return sentence_prob
-
-
-        
-#%%
-
-sentences = read_file(input_file)
-languages = get_sentence_id(sentences)
-len_languages = len(languages)
-clean_sentences = preprocessing(sentences, languages)
+sentences = read_file(input_file, remove_list)
+sentences_train, sentences_test = get_train_test(sentences)
+train_sentences = train_preprocessing(sentences_train)
+len_languages = len(sentences)
 language_prob = 1/len_languages
-pre_sentences, total_char, lang_letter_count , letter_dict = get_frequencies(sentences,languages)    
-letter_lang_prob = get_conditional_prob(letter_dict, languages, lang_letter_count, total_char)    
+lang_total_char = [len(i) for i in train_sentences]       
+letter_dict = get_letter_dict(train_sentences)
+conditional_prob =  get_conditional_prob(train_sentences, letter_dict)   
 
 #%%
-# letter id 
-temp_sentences = pre_sentences[0][0].keys()
-sentence_prob = naive_bayes(letter_lang_prob, language_prob, temp_sentences)
-
-
-
-
-
-
-
-
+        
