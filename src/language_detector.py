@@ -5,9 +5,9 @@ from sklearn.model_selection import KFold, train_test_split
 
 # languages = ['bg', 'bs', 'cz', 'es-AR', 'es-ES', 'hr', 'id', 'mk', 'my', 'pt-BR', 'pt-PT', 'sk', 'sr']
 input_file = 'Project (Application 2) (Corpus).txt'
-remove_list = [" ","." ,"," ,"[" ,"]","(" ,')','"',"”","„","“",'%','!',';','?','–','-','&',"'",'/','…','→','’','‘',"`",'@','$','»','«','€','•','½','+','#','*','‰','®','<','>','=','©','°','²' ]	
+remove_list = [" ", ".", ",", "[", "]", "(", ')', '"', "”", "„", "“", '%', '!', ';', '?', '–', '-', '&', "'", '/', '…', '→', '’', '‘', "`", '@', '$', '»', '«', '€', '•', '½', '+', '#', '*', '‰', '®', '<', '>', '=', '©', '°', '²']
 
-def read_file(input_file,remove_list):
+def read_file(input_file, remove_list):
     with open(input_file, encoding='utf-16') as f:
         lines = f.read().split("\n")
         sentences_by_language = {}              
@@ -47,7 +47,7 @@ def get_letter_dict(train_sentences):
     temp = ''.join(train_sentences)
     return list(set(temp))
 
-def get_conditional_prob(train_sentences, letter_dict , apply_smoothing = False):
+def get_conditional_prob(train_sentences, letter_dict, apply_smoothing=False):
     len_letter = len(letter_dict)
     conditional_prob = np.zeros((len_letter, len_languages))
     for lang in range(len(train_sentences)):
@@ -55,7 +55,10 @@ def get_conditional_prob(train_sentences, letter_dict , apply_smoothing = False)
         for char in range(len(letter_dict)):
             real_char = letter_dict[char] 
             conditional_prob[char][lang] = counter[real_char]
-        conditional_prob[:,lang] = conditional_prob[:,lang] / lang_total_char[lang] 
+        if apply_smoothing:
+            conditional_prob[:,lang] = np.array([(element + 1) for element in conditional_prob[:,lang]]) / (lang_total_char[lang] + len_letter)
+        else:
+            conditional_prob[:,lang] = conditional_prob[:,lang] / lang_total_char[lang] 
     return conditional_prob
 
 sentences = read_file(input_file, remove_list)
@@ -65,7 +68,7 @@ len_languages = len(sentences)
 language_prob = 1/len_languages
 lang_total_char = [len(i) for i in train_sentences]       
 letter_dict = get_letter_dict(train_sentences)
-conditional_prob =  get_conditional_prob(train_sentences, letter_dict)   
+conditional_prob =  get_conditional_prob(train_sentences, letter_dict)
 
 #%%
         
