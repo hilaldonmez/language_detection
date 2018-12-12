@@ -1,17 +1,17 @@
-from collections import  Counter
 import numpy as np
 from sklearn.model_selection import  train_test_split
-import math
 import operator
 
 # languages = ['bg', 'bs', 'cz', 'es-AR', 'es-ES', 'hr', 'id', 'mk', 'my', 'pt-BR', 'pt-PT', 'sk', 'sr']
 input_file = 'Project (Application 2) (Corpus).txt'
 remove_list = [" ", ".", ",", "[", "]", "(", ')', '"', "”", "„", "“", '%', '!', ';', '?', '–', '-', '&', "'", '/', '…', '→', '’', '‘', "`", '@', '$', '»', '«', '€', '•', '½', '+', '#', '*', '‰', '®', '<', '>', '=', '©', '°', '²', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', "\xa0", "\xad", "\u2002"]
 
-def read_file(input_file, remove_list):
+               
+def read_file(input_file, remove_list, NB = False):
     with open(input_file, encoding='utf-16') as f:
         lines = f.read().split("\n")
         sentences_by_language = {} 
+        average_word_list = {}
         lang_dict = {}
         count = 0             
         for index, line in enumerate(lines):
@@ -20,6 +20,14 @@ def read_file(input_file, remove_list):
                 continue
             lang = sentence[1]
             sent = sentence[0]
+            if not NB:
+                word_list = sent.split(" ")
+                total_avg = sum( map(len, word_list) ) / len(word_list)
+                if lang in average_word_list:
+                    average_word_list[lang].append(total_avg)
+                else:
+                    average_word_list[lang] = [total_avg]
+            
             for i in remove_list: 
                 sent = sent.replace(i, "")              
             if lang in sentences_by_language:
@@ -28,7 +36,7 @@ def read_file(input_file, remove_list):
                 lang_dict[count] = lang
                 count = count + 1
                 sentences_by_language[lang] = [sent]                
-        return sentences_by_language , lang_dict    
+        return sentences_by_language , lang_dict , average_word_list   
 
 def get_train_test(sentences):
     sentences_train = []
@@ -55,36 +63,7 @@ def get_letter_dict(train_sentences):
     temp = ''.join(train_sentences)
     return list(set(temp))
 
-def get_conditional_prob(train_sentences, letter_dict, apply_smoothing = True):
-    len_letter = len(letter_dict)
-    conditional_prob = np.zeros((len_letter, len_languages))
-    for lang in range(len(train_sentences)):
-        counter = Counter(train_sentences[lang])
-        for char in range(len(letter_dict)):
-            real_char = letter_dict[char] 
-            conditional_prob[char][lang] = counter[real_char]
-        if apply_smoothing:
-            conditional_prob[:,lang] = np.array([(element + 1) for element in conditional_prob[:,lang]]) / (lang_total_char[lang] + len_letter)
-        else:
-            conditional_prob[:,lang] = conditional_prob[:,lang] / lang_total_char[lang] 
-    return conditional_prob
 
-def naivebayes(sentences_test,conditional_prob, len_languages):        
-    sent_label = []
-    for lang in sentences_test:
-        for sent in lang:
-            sent_prob = np.ones(len_languages)*math.log10(language_prob)
-            c = Counter(sent)
-            for poss_lang in range(len_languages):
-                for i in c:
-                    letter_prob = 0
-                    if i in letter_dict:
-                        letter_id = letter_dict.index(i)
-                        letter_prob = math.log10(conditional_prob[letter_id][poss_lang])
-                        
-                    sent_prob[poss_lang] = sent_prob[poss_lang] + letter_prob*c[i]
-            sent_label.append(np.argmax(sent_prob))
-    return sent_label        
 
 def evaluation(label, len_languages, interval ,lang_dict , NB):
     real_label = np.ones(len_languages) * interval
@@ -97,18 +76,24 @@ def evaluation(label, len_languages, interval ,lang_dict , NB):
     
     FP = np.asarray(list(map(operator.sub, labelled_count, TP)))
     FN = np.asarray(list(map(operator.sub, real_label , TP)))
-
+    TN = np.asarray(np.ones(len_languages)* interval * len_languages - FN - FP - TP)
+    
+    if not NB:
+        TP = TP + 10**-3
+        FP = FP + 10**-3
+        FN = FN + 10**-3
+        TN = TN + 10**-3
 
     for i in range(len(TP)):
         print("TP for ",lang_dict[i],": ",TP[i])
         print("FP for ",lang_dict[i],": ",FP[i])
         print("FN for ",lang_dict[i],": ",FN[i])
-        print("TN for ",lang_dict[i],": ",interval * len_languages - FN[i] - FP[i] - TP[i])
+        print("TN for ",lang_dict[i],": ",TN[i])
 
     
     lang_accuracy = []
     for i in range(len_languages):
-        acc  = (interval * len_languages - FN[i]- FP[i]) / (interval * len_languages) 
+        acc  = (interval * len_languages - FN[i]- FP[i]) / (interval * len_languages)  
         lang_accuracy.append(acc)
 
     total_accuracy = sum(TP) / (len_languages * interval)
@@ -143,16 +128,13 @@ def evaluation(label, len_languages, interval ,lang_dict , NB):
     return micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy
 
 
-sentences, lang_dict = read_file(input_file, remove_list)
+sentences, lang_dict, average_word_list = read_file(input_file, remove_list)
 sentences_train, sentences_test, interval = get_train_test(sentences)
 train_sentences = train_preprocessing(sentences_train)
+letter_dict = get_letter_dict(train_sentences)
 len_languages = len(sentences)
 language_prob = (1/len_languages)
-lang_total_char = [len(i) for i in train_sentences]       
-letter_dict = get_letter_dict(train_sentences)
-conditional_prob =  get_conditional_prob(train_sentences, letter_dict)
-label = naivebayes(sentences_test, conditional_prob , len_languages)
-micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy = evaluation(label, len_languages, interval, lang_dict, True)
 
-#%%
-        
+
+
+
