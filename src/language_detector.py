@@ -69,8 +69,8 @@ def get_conditional_prob(train_sentences, letter_dict, apply_smoothing = True):
 def naivebayes(sentences_test,conditional_prob, len_languages):        
     sent_label = []
     for lang in sentences_test:
-        sent_prob = np.ones(len_languages)*language_prob
         for sent in lang:
+            sent_prob = np.ones(len_languages)*math.log10(language_prob)
             c = Counter(sent)
             for poss_lang in range(len_languages):
                 for i in c:
@@ -102,7 +102,7 @@ def evaluation(label, len_languages, interval , NB):
 
     total_accuracy = sum(TP) / (len_languages * interval)
     
-    TP_sum = np.sum(TP)  
+    TP_sum = np.sum(TP)
     TP_FP_sum = np.sum(TP + FP)
     TP_FN_sum = np.sum(TP + FN)
     micro_average_recall = TP_sum / TP_FP_sum
@@ -116,6 +116,15 @@ def evaluation(label, len_languages, interval , NB):
     macro_average_precision = np.sum(precision) / len_languages
     macro_average_f = np.sum(F) / len_languages
     
+    print("Accuracy for each language : ", lang_accuracy)
+    print("Accuracy for entire set: ",total_accuracy)
+    print("Micro average recall: ",micro_average_recall)
+    print("Micro average precision: ",micro_average_precision)
+    print("Micro average f: ",micro_average_f)
+    print("Macro average recall: ",macro_average_recall)
+    print("Macro average precision: ",macro_average_precision)
+    print("Macro average f: ",macro_average_f)
+    
     return micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy
 
 
@@ -123,12 +132,12 @@ sentences = read_file(input_file, remove_list)
 sentences_train, sentences_test, interval = get_train_test(sentences)
 train_sentences = train_preprocessing(sentences_train)
 len_languages = len(sentences)
-language_prob = math.log10(1/len_languages)
+language_prob = (1/len_languages)
 lang_total_char = [len(i) for i in train_sentences]       
 letter_dict = get_letter_dict(train_sentences)
 conditional_prob =  get_conditional_prob(train_sentences, letter_dict)
 label = naivebayes(sentences_test, conditional_prob , len_languages)
 micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy = evaluation(label, len_languages, interval , True)
 
-
+#%%
         
