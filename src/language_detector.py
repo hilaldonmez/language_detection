@@ -1,7 +1,6 @@
-import re
-from collections import defaultdict, Counter
+from collections import  Counter
 import numpy as np
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import  train_test_split
 import math
 import operator
 
@@ -12,7 +11,9 @@ remove_list = [" ", ".", ",", "[", "]", "(", ')', '"', "”", "„", "“", '%',
 def read_file(input_file, remove_list):
     with open(input_file, encoding='utf-16') as f:
         lines = f.read().split("\n")
-        sentences_by_language = {}              
+        sentences_by_language = {} 
+        lang_dict = {}
+        count = 0             
         for index, line in enumerate(lines):
             sentence = line.split("\t")
             if len(sentence) < 2:
@@ -24,8 +25,10 @@ def read_file(input_file, remove_list):
             if lang in sentences_by_language:
                 sentences_by_language[lang].append(sent)              
             else:
+                lang_dict[count] = lang
+                count = count + 1
                 sentences_by_language[lang] = [sent]                
-        return sentences_by_language    
+        return sentences_by_language , lang_dict    
 
 def get_train_test(sentences):
     sentences_train = []
@@ -83,7 +86,7 @@ def naivebayes(sentences_test,conditional_prob, len_languages):
             sent_label.append(np.argmax(sent_prob))
     return sent_label        
 
-def evaluation(label, len_languages, interval , NB):
+def evaluation(label, len_languages, interval ,lang_dict , NB):
     real_label = np.ones(len_languages) * interval
     if not NB:
         labelled_count = [label.count(i+1) for i in range(len_languages)]
@@ -94,6 +97,14 @@ def evaluation(label, len_languages, interval , NB):
     
     FP = np.asarray(list(map(operator.sub, labelled_count, TP)))
     FN = np.asarray(list(map(operator.sub, real_label , TP)))
+
+
+    for i in range(len(TP)):
+        print("TP for ",lang_dict[i],": ",TP[i])
+        print("FP for ",lang_dict[i],": ",FP[i])
+        print("FN for ",lang_dict[i],": ",FN[i])
+        print("TN for ",lang_dict[i],": ",interval * len_languages - FN[i] - FP[i] - TP[i])
+
     
     lang_accuracy = []
     for i in range(len_languages):
@@ -116,8 +127,12 @@ def evaluation(label, len_languages, interval , NB):
     macro_average_precision = np.sum(precision) / len_languages
     macro_average_f = np.sum(F) / len_languages
     
-    print("Accuracy for each language : ", lang_accuracy)
-    print("Accuracy for entire set: ",total_accuracy)
+    print("Accuracy for each language : ")
+    for i in range(len(lang_accuracy)):
+        print(lang_dict[i],": ",lang_accuracy[i])
+    
+    
+    print("\nAccuracy for entire set: ",total_accuracy)
     print("Micro average recall: ",micro_average_recall)
     print("Micro average precision: ",micro_average_precision)
     print("Micro average f: ",micro_average_f)
@@ -128,7 +143,7 @@ def evaluation(label, len_languages, interval , NB):
     return micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy
 
 
-sentences = read_file(input_file, remove_list)
+sentences, lang_dict = read_file(input_file, remove_list)
 sentences_train, sentences_test, interval = get_train_test(sentences)
 train_sentences = train_preprocessing(sentences_train)
 len_languages = len(sentences)
@@ -137,7 +152,7 @@ lang_total_char = [len(i) for i in train_sentences]
 letter_dict = get_letter_dict(train_sentences)
 conditional_prob =  get_conditional_prob(train_sentences, letter_dict)
 label = naivebayes(sentences_test, conditional_prob , len_languages)
-micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy = evaluation(label, len_languages, interval , True)
+micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy = evaluation(label, len_languages, interval, lang_dict, True)
 
 #%%
         
