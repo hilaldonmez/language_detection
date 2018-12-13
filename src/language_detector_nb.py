@@ -21,18 +21,30 @@ def naivebayes(sentences_test, conditional_prob, len_languages, letter_dict, lan
     sent_label = []
     for lang in sentences_test:
         for sent in lang:
-            sent_prob = np.ones(len_languages)*math.log10(language_prob)
-            c = Counter(sent)
-            for poss_lang in range(len_languages):
-                for i in c:
-                    letter_prob = 0
-                    if i in letter_dict:
-                        letter_id = letter_dict.index(i)
-                        letter_prob = math.log10(conditional_prob[letter_id][poss_lang])
-                        
-                    sent_prob[poss_lang] = sent_prob[poss_lang] + letter_prob*c[i]
-            sent_label.append(np.argmax(sent_prob))
-    return sent_label   
+            label = find_lang_tag(sent, len_languages, language_prob, letter_dict, conditional_prob)
+            sent_label.append(label)
+    return sent_label
+
+def find_lang_tag(sentence, len_languages, language_prob, letter_dict, conditional_prob):
+    sent_prob = np.ones(len_languages)*math.log10(language_prob)
+    c = Counter(sentence)
+    for poss_lang in range(len_languages):
+        for i in c:
+            letter_prob = 0
+            if i in letter_dict:
+                letter_id = letter_dict.index(i)
+                letter_prob = math.log10(conditional_prob[letter_id][poss_lang])
+                
+            sent_prob[poss_lang] = sent_prob[poss_lang] + letter_prob*c[i]
+    return np.argmax(sent_prob)
+
+def get_language(sentence):
+    for i in pr.remove_list: 
+        sentence = sentence.replace(i, "")
+    lang_total_char = [len(i) for i in pr.train_sentences]       
+    conditional_prob =  get_conditional_prob(pr.train_sentences, pr.letter_dict, pr.len_languages, lang_total_char)
+    language = find_lang_tag(sentence, pr.len_languages, pr.language_prob, pr.letter_dict, conditional_prob)
+    return pr.lang_dict[language]
 
 def apply_naive_bayes():     
     lang_total_char = [len(i) for i in pr.train_sentences]       
