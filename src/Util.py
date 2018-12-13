@@ -80,12 +80,6 @@ def evaluation(label, len_languages, interval, lang_dict, NB):
         FP = FP + 10**-3
         FN = FN + 10**-3
         TN = TN + 10**-3
-
-    for i in range(len(TP)):
-        print("TP for ", lang_dict[i],": ", TP[i])
-        print("FP for ", lang_dict[i],": ", FP[i])
-        print("FN for ", lang_dict[i],": ", FN[i])
-        print("TN for ", lang_dict[i],": ", TN[i])
     
     lang_accuracy = []
     for i in range(len_languages):
@@ -107,18 +101,22 @@ def evaluation(label, len_languages, interval, lang_dict, NB):
     macro_average_recall = np.sum(recall) / len_languages
     macro_average_precision = np.sum(precision) / len_languages
     macro_average_f = np.sum(F) / len_languages
-    
-    print("Accuracy for each language : ")
-    for i in range(len(lang_accuracy)):
-        print(lang_dict[i], ": ", lang_accuracy[i])
-    
-    print("\nAccuracy for entire set: ", total_accuracy)
-    print("Micro average recall: ", micro_average_recall)
-    print("Micro average precision: ", micro_average_precision)
-    print("Micro average f: ", micro_average_f)
-    print("Macro average recall: ", macro_average_recall)
-    print("Macro average precision: ", macro_average_precision)
-    print("Macro average f: ", macro_average_f)
+
+    print("\nAccuracy for entire set: ", round(total_accuracy, 3))
+
+    print("\nResults for each language\n")
+    print("Tag\tAcc\tTP\tFP\tFN\tTN")
+
+    for i in range(len(TP)):
+        print(lang_dict[i], "\t", round(lang_accuracy[i], 3), "\t", TP[i], "\t", FP[i], "\t", FN[i], "\t", TN[i])
+
+    print("\n")
+    print("Micro-averaged precision: ", round((micro_average_precision * 100), 3), "%")
+    print("               recall:    ", round((micro_average_recall * 100), 3), "%")
+    print("               F-Measure: ", round((micro_average_f * 100), 3), "%")
+    print("Macro-averaged precision: ", round((macro_average_precision * 100), 3), "%")
+    print("               recall:    ", round((macro_average_recall * 100), 3), "%")
+    print("               F-Measure: ", round((macro_average_f * 100), 3), "%")
     
     return micro_average_recall, micro_average_precision, micro_average_f, macro_average_recall, macro_average_precision, macro_average_f, lang_accuracy, total_accuracy
 
