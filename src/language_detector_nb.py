@@ -1,8 +1,7 @@
-import preprocessing as pr
+import Util as pr
 from collections import  Counter
 import numpy as np
 import math
-
 
 def get_conditional_prob(train_sentences, letter_dict, len_languages, lang_total_char, apply_smoothing = True):
     len_letter = len(letter_dict)
@@ -18,7 +17,7 @@ def get_conditional_prob(train_sentences, letter_dict, len_languages, lang_total
             conditional_prob[:,lang] = conditional_prob[:,lang] / lang_total_char[lang] 
     return conditional_prob
 
-def naivebayes(sentences_test,conditional_prob, len_languages, letter_dict , language_prob):        
+def naivebayes(sentences_test, conditional_prob, len_languages, letter_dict, language_prob):        
     sent_label = []
     for lang in sentences_test:
         for sent in lang:
@@ -33,10 +32,10 @@ def naivebayes(sentences_test,conditional_prob, len_languages, letter_dict , lan
                         
                     sent_prob[poss_lang] = sent_prob[poss_lang] + letter_prob*c[i]
             sent_label.append(np.argmax(sent_prob))
-    return sent_label        
+    return sent_label   
 
-lang_total_char = [len(i) for i in pr.train_sentences]       
-
-conditional_prob =  get_conditional_prob(pr.train_sentences, pr.letter_dict , pr.len_languages, lang_total_char)
-label = naivebayes(pr.sentences_test, conditional_prob , pr.len_languages, pr.letter_dict , pr.language_prob)
-micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy = pr.evaluation(label, pr.len_languages, pr.interval, pr.lang_dict, True)
+def apply_naive_bayes():     
+    lang_total_char = [len(i) for i in pr.train_sentences]       
+    conditional_prob =  get_conditional_prob(pr.train_sentences, pr.letter_dict, pr.len_languages, lang_total_char)
+    label = naivebayes(pr.sentences_test, conditional_prob, pr.len_languages, pr.letter_dict, pr.language_prob)
+    micro_average_recall, micro_average_precision, micro_average_f, macro_average_recall, macro_average_precision, macro_average_f, lang_accuracy, total_accuracy = pr.evaluation(label, pr.len_languages, pr.interval, pr.lang_dict, True)

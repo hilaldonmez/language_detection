@@ -36,7 +36,7 @@ def read_file(input_file, remove_list, NB = False):
                 lang_dict[count] = lang
                 count = count + 1
                 sentences_by_language[lang] = [sent]                
-        return sentences_by_language , lang_dict , average_word_list   
+        return sentences_by_language, lang_dict, average_word_list   
 
 def get_train_test(sentences):
     sentences_train = []
@@ -58,14 +58,11 @@ def train_preprocessing(sentences):
         total_sentences.append(temp_sent)        
     return total_sentences
             
-
 def get_letter_dict(train_sentences):
     temp = ''.join(train_sentences)
     return list(set(temp))
 
-
-
-def evaluation(label, len_languages, interval ,lang_dict , NB):
+def evaluation(label, len_languages, interval, lang_dict, NB):
     real_label = np.ones(len_languages) * interval
     if not NB:
         labelled_count = [label.count(i+1) for i in range(len_languages)]
@@ -75,7 +72,7 @@ def evaluation(label, len_languages, interval ,lang_dict , NB):
         TP = np.asarray([label[(interval*i):(interval*(i+1))].count(i)  for i in range(len_languages)])
     
     FP = np.asarray(list(map(operator.sub, labelled_count, TP)))
-    FN = np.asarray(list(map(operator.sub, real_label , TP)))
+    FN = np.asarray(list(map(operator.sub, real_label, TP)))
     TN = np.asarray(np.ones(len_languages)* interval * len_languages - FN - FP - TP)
     
     if not NB:
@@ -85,11 +82,10 @@ def evaluation(label, len_languages, interval ,lang_dict , NB):
         TN = TN + 10**-3
 
     for i in range(len(TP)):
-        print("TP for ",lang_dict[i],": ",TP[i])
-        print("FP for ",lang_dict[i],": ",FP[i])
-        print("FN for ",lang_dict[i],": ",FN[i])
-        print("TN for ",lang_dict[i],": ",TN[i])
-
+        print("TP for ", lang_dict[i],": ", TP[i])
+        print("FP for ", lang_dict[i],": ", FP[i])
+        print("FN for ", lang_dict[i],": ", FN[i])
+        print("TN for ", lang_dict[i],": ", TN[i])
     
     lang_accuracy = []
     for i in range(len_languages):
@@ -114,18 +110,17 @@ def evaluation(label, len_languages, interval ,lang_dict , NB):
     
     print("Accuracy for each language : ")
     for i in range(len(lang_accuracy)):
-        print(lang_dict[i],": ",lang_accuracy[i])
+        print(lang_dict[i], ": ", lang_accuracy[i])
     
+    print("\nAccuracy for entire set: ", total_accuracy)
+    print("Micro average recall: ", micro_average_recall)
+    print("Micro average precision: ", micro_average_precision)
+    print("Micro average f: ", micro_average_f)
+    print("Macro average recall: ", macro_average_recall)
+    print("Macro average precision: ", macro_average_precision)
+    print("Macro average f: ", macro_average_f)
     
-    print("\nAccuracy for entire set: ",total_accuracy)
-    print("Micro average recall: ",micro_average_recall)
-    print("Micro average precision: ",micro_average_precision)
-    print("Micro average f: ",micro_average_f)
-    print("Macro average recall: ",macro_average_recall)
-    print("Macro average precision: ",macro_average_precision)
-    print("Macro average f: ",macro_average_f)
-    
-    return micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy
+    return micro_average_recall, micro_average_precision, micro_average_f, macro_average_recall, macro_average_precision, macro_average_f, lang_accuracy, total_accuracy
 
 
 sentences, lang_dict, average_word_list = read_file(input_file, remove_list)

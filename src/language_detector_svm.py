@@ -1,4 +1,4 @@
-import preprocessing as pr
+import Util as pr
 
 def get_full_dict(original_sentences):
     full_sent = ""    
@@ -21,8 +21,8 @@ def get_full_dict(original_sentences):
 # 10000 means the length of sentence 
 # 10001 means the number of capital -> number of occurences
 # 10002 means the average length of word in sentences    
-def write_data(file_name, sentences , average_word_list ,lang_dict, letter_dict, sentence_length = True , capital = False , word_list = False):
-    file = open(file_name ,"w")         
+def write_data(file_name, sentences, average_word_list, lang_dict, letter_dict, sentence_length = False, capital = False, word_list = False):
+    file = open(file_name, "w")         
     for lang_id in range(len(sentences)):
         sent_count = 0
         for sent in sentences[lang_id]:   
@@ -59,13 +59,14 @@ def get_result_label(file_name):
             result_label.append(line.split()[0])
     return result_label
 
-letter_dict = get_full_dict(pr.sentences)    
-write_data("train.txt", pr.sentences_train, pr.average_word_list ,pr.lang_dict , letter_dict)
-write_data("test.txt", pr.sentences_test, pr.average_word_list ,pr.lang_dict, letter_dict)
+def apply_svm(sentence_length = False, capital = False, word_list = False):
+    letter_dict = get_full_dict(pr.sentences)    
+    write_data("train.txt", pr.sentences_train, pr.average_word_list, pr.lang_dict, letter_dict, sentence_length,capital, word_list)
+    write_data("test.txt", pr.sentences_test, pr.average_word_list, pr.lang_dict, letter_dict, sentence_length,capital, word_list)
 
-#%%
-result_label = get_result_label("result.txt")            
-result_label = list(map(int, result_label))
-micro_average_recall , micro_average_precision , micro_average_f , macro_average_recall , macro_average_precision , macro_average_f , lang_accuracy , total_accuracy = pr.evaluation(result_label,  pr.len_languages, pr.interval, pr.lang_dict, False)  
+    #%%
+    result_label = get_result_label("result.txt")            
+    result_label = list(map(int, result_label))
+    micro_average_recall, micro_average_precision, micro_average_f, macro_average_recall, macro_average_precision, macro_average_f, lang_accuracy, total_accuracy = pr.evaluation(result_label, pr.len_languages, pr.interval, pr.lang_dict, False)  
 
 
