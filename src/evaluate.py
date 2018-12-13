@@ -31,5 +31,6 @@ else:
 
 if APPLY_SVM:
 	svm.apply_svm(APPLY_SENTENCE, APPLY_CAPITAL, APPLY_WORD)
+    
 else:
 	nb.apply_naive_bayes()
