@@ -1,5 +1,5 @@
 # Language Detection
-Language identification System is implemented via both Naive Bayes and Support Vector Machine. Dataset is Discriminating between Similar Languages (DSL) Shared Task 2015 corpus which consists of 13 languages and 2000 sentences for each language. In the dataset, each line has a sentence and related language label. </br>
+Language Identification System is implemented via both Naive Bayes and Support Vector Machine. Dataset is Discriminating between Similar Languages (DSL) Shared Task 2015 corpus which consists of 13 languages and 2000 sentences for each language. In the dataset, each line has a sentence and related language label. </br>
 Code is implemented using Python3. Below are python3 packages needed to run code:
 * numpy
 * scikit-learn
